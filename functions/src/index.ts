@@ -82,18 +82,7 @@ export const updateMatchScores = onSchedule('every 1 minutes', async () => {
   logger.info('Updating match scores from FIFA API...');
 
   try {
-    // Get today's date range
-    const now = new Date();
-    const startOfDay = new Date(now);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(now);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const fromDate = startOfDay.toISOString();
-    const toDate = endOfDay.toISOString();
-
-    // Fetch today's matches from FIFA API
-    const apiUrl = `https://api.fifa.com/api/v3/calendar/matches?idseason=${FIFA_SEASON_ID}&idcompetition=${FIFA_COMPETITION_ID}&from=${fromDate}&to=${toDate}&count=500`;
+    const apiUrl = `https://api.fifa.com/api/v3/calendar/matches?idseason=${FIFA_SEASON_ID}&idcompetition=${FIFA_COMPETITION_ID}&count=500`;
 
     const response = await fetch(apiUrl);
     if (!response.ok) {
