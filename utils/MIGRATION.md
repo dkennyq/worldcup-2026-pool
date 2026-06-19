@@ -29,92 +29,122 @@ npm install firebase-admin
 
    ⚠️ **IMPORTANT**: Add `service-account.json` to `.gitignore` immediately. Never commit this file.
 
-## Configuration
+## Files in this directory
 
-Edit `utils/migrate-config.json` to define users and predictions:
+| File | Purpose |
+|------|---------|
+| `migrate.js` | Main migration script |
+| `migrate-config.json` | JSON configuration (users + predictions) |
+| `users-example.csv` | Example CSV with users to import |
+| `predictions-example.csv` | Example CSV with predictions per user |
 
-```json
-{
-  "users": [
-    {
-      "uid": "fU4jaikpckRvUm7hBEoQJiv5PuY2",
-      "email": "josefa.fandinho@gmail.com",
-      "displayName": "Josefa F.",
-      "userName": "josefa.fandinho",
-      "photoURL": "https://i.imgur.com/Z9TguNe.png",
-      "admin": true
-    }
-  ],
-  "predictions": {
-    "fU4jaikpckRvUm7hBEoQJiv5PuY2": {
-      "1": { "homePrediction": 2, "awayPrediction": 0 },
-      "2": { "homePrediction": 1, "awayPrediction": 1 }
-    }
-  }
-}
+## Working with Matches
+
+Before creating predictions, you should know which matches exist in the database.
+
+### List all matches from Firebase
+```bash
+node utils/migrate.js --list-matches
 ```
 
-### User Fields
-| Field | Required | Description |
-|-------|----------|-------------|
-| `uid` | Yes | 28-character Firebase-style UID |
-| `email` | Yes | User email (must be unique in Auth) |
+This prints a table showing all matches with their `gameId`, teams, and current scores. Use the `gameId` column when creating predictions.
+
+## Migrating Users
+
+### From CSV (Recommended for bulk import)
+
+Create a CSV file following the format of `users-example.csv`:
+
+```csv
+uid,email,displayName,userName,photoURL,admin
+fU4jaikpckRvUm7hBEoQJiv5PuY2,josefa.fandinho@gmail.com,Josefa F.,josefa.fandinho,https://i.imgur.com/Z9TguNe.png,true
+```
+
+**Columns:**
+| Column | Required | Description |
+|--------|----------|-------------|
+| `uid` | Yes | 28-character Firebase-style UID (generate one if needed) |
+| `email` | Yes | User email (must be unique) |
 | `displayName` | Yes | Name shown in UI |
 | `userName` | Yes | Unique username (dots allowed) |
 | `photoURL` | No | Profile picture URL |
-| `admin` | No | Set to `true` for admin privileges |
+| `admin` | No | `true` or `false` |
 
-### Generating a UID
-If you need to generate a new UID, run:
+**Generate a new UID:**
 ```bash
 node -e "const c='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';let u='';for(let i=0;i<28;i++)u+=c[Math.floor(Math.random()*62)];console.log(u);"
 ```
 
-## Usage
+**Migrate users from CSV:**
+```bash
+node utils/migrate.js --users --users-csv=utils/users-example.csv
+```
 
-### Migrate Users Only
+### From JSON
+
+Edit `migrate-config.json` and run:
 ```bash
 node utils/migrate.js --users
 ```
 
-### Migrate Predictions Only
+## Migrating Predictions
+
+### From CSV (Recommended for bulk import)
+
+Create a CSV file following the format of `predictions-example.csv`:
+
+```csv
+uid,gameId,homePrediction,awayPrediction
+fU4jaikpckRvUm7hBEoQJiv5PuY2,1,2,0
+fU4jaikpckRvUm7hBEoQJiv5PuY2,2,1,1
+```
+
+**Columns:**
+| Column | Description |
+|--------|-------------|
+| `uid` | User's UID (must exist in database) |
+| `gameId` | Match game ID (see `node utils/migrate.js --list-matches`) |
+| `homePrediction` | Predicted goals for home team |
+| `awayPrediction` | Predicted goals for away team |
+
+**Migrate predictions from CSV:**
+```bash
+node utils/migrate.js --predictions --predictions-csv=utils/predictions-example.csv
+```
+
+### From JSON
+
+Edit `migrate-config.json` and run:
 ```bash
 node utils/migrate.js --predictions
 ```
 
-### Migrate Both (default)
+### Generate Random Predictions (for testing)
+
+If you want to quickly generate random predictions for users based on actual matches in Firebase:
+
 ```bash
-node utils/migrate.js
+# For a single user
+node utils/migrate.js --generate-predictions fU4jaikpckRvUm7hBEoQJiv5PuY2
+
+# For all users in the database
+node utils/migrate.js --generate-predictions all
 ```
 
-### Recalculate Scores (after migrating predictions for played matches)
+This reads the `matches` object from Firebase and creates random predictions (0-3 goals) for matches that haven't started yet.
+
+## Combined Operations
+
 ```bash
+# Migrate users + predictions from CSV
+node utils/migrate.js --users --predictions --users-csv=utils/users-example.csv --predictions-csv=utils/predictions-example.csv
+
+# Migrate everything + recalculate scores for played matches
+node utils/migrate.js --users --predictions --recalculate --users-csv=utils/users-example.csv --predictions-csv=utils/predictions-example.csv
+
+# Only recalculate scores
 node utils/migrate.js --recalculate
 ```
-
-### Combine operations
-```bash
-node utils/migrate.js --users --predictions --recalculate
-```
-
-## What the Script Does
-
-### User Migration
-1. **Creates/updates Firebase Auth user** with email, displayName, photoURL
-2. **Creates user record** in `users/{uid}` with email, displayName, userName, photoURL, score: 0, admin
-3. **Creates username index** in `usernames/{normalizedUsername}` -> `{uid}`
-4. **Sets admin claims** (if `admin: true`)
-
-### Prediction Migration
-1. **Writes predictions** to `predictions/{uid}/{gameId}` with:
-   - `homePrediction`, `awayPrediction`
-   - `points: 0` (calculated later by Cloud Functions when match scores update)
-   - `updatedAt: timestamp`
-
-### Score Recalculation
-1. **Reads all matches** and checks which have scores
-2. **Calculates points** for each prediction based on actual match results
-3. **Updates** `predictions/{uid}/{gameId}/points` and `users/{uid}/score`
 
 ## Database Structure Created
 
@@ -138,31 +168,14 @@ predictions/
       awayPrediction: 0
       points: 0
       updatedAt: 1718572800000
-    2:
-      homePrediction: 1
-      awayPrediction: 1
-      points: 0
-      updatedAt: 1718572800000
 ```
-
-## Alternative: Import from CSV
-
-If you have many users, you can convert a CSV to the JSON format:
-
-```bash
-# Example using csvtojson
-npm install -g csvtojson
-csvtojson users.csv > users.json
-```
-
-Then transform the JSON to match the `migrate-config.json` schema.
 
 ## Cleanup
 
 After migration:
 1. Remove `service-account.json` from your local machine
 2. Consider disabling the service account in Firebase Console
-3. Store the `migrate-config.json` as a backup (it does not contain secrets)
+3. Store the CSV/JSON files as backups (they do not contain secrets)
 
 ## Troubleshooting
 
@@ -173,4 +186,7 @@ Make sure `service-account.json` is in the project root (same level as `package.
 The script will update the existing user instead of creating a new one.
 
 ### Error: `Username is already taken`
-The `usernames` index already has that normalized username. You must pick a unique username or delete the existing index first.
+The `usernames` index already has that normalized username. Pick a unique username or delete the existing index first.
+
+### Error: `Match not found for gameId X`
+Make sure the `gameId` in your predictions CSV matches the actual game IDs in Firebase. Run `node utils/migrate.js --list-matches` to verify.

@@ -1,20 +1,26 @@
 /**
  * User & Prediction Migration Script for World Cup 2026 Pool
- * 
+ *
  * This script uses firebase-admin SDK to bypass security rules and
  * directly create/update users and their predictions in the database.
- * 
+ *
  * Prerequisites:
  * 1. Download your Firebase service account key from:
  *    Firebase Console > Project Settings > Service Accounts > Generate new private key
  * 2. Save it as `service-account.json` in the project root (DO NOT COMMIT THIS FILE)
  * 3. Install dependencies: npm install firebase-admin
- * 
+ *
  * Usage:
- *   node utils/migrate.js --users      Migrate only users
- *   node utils/migrate.js --predictions  Migrate only predictions
- *   node utils/migrate.js              Migrate both
- * 
+ *   node utils/migrate.js                              Migrate users + predictions from JSON/CSV
+ *   node utils/migrate.js --users                      Migrate only users
+ *   node utils/migrate.js --predictions                Migrate only predictions
+ *   node utils/migrate.js --users --csv users.csv     Migrate users from CSV
+ *   node utils/migrate.js --predictions --csv pred.csv Migrate predictions from CSV
+ *   node utils/migrate.js --generate-predictions UID   Generate random predictions for UID
+ *   node utils/migrate.js --generate-predictions all   Generate random predictions for all users
+ *   node utils/migrate.js --recalculate                Recalculate scores for played matches
+ *   node utils/migrate.js --list-matches               List all matches from Firebase
+ *
  * Best practice: This is a one-time process. After migration, remove
  * the service account key and disable this script.
  */
@@ -30,24 +36,86 @@ const path = require('path');
 const SERVICE_ACCOUNT_PATH = path.join(__dirname, '..', 'service-account.json');
 const DATABASE_URL = 'https://arenavault-d9f7f-default-rtdb.firebaseio.com';
 
+const CONFIG_PATH = path.join(__dirname, 'migrate-config.json');
+const DEFAULT_USERS_CSV = path.join(__dirname, 'users-example.csv');
+const DEFAULT_PREDICTIONS_CSV = path.join(__dirname, 'predictions-example.csv');
+
 // ────────────────────────────────────────────────
-// USERS TO MIGRATE
+// CSV PARSER
 // ────────────────────────────────────────────────
 
-const CONFIG_PATH = path.join(__dirname, 'migrate-config.json');
+function parseCSV(content) {
+  const lines = content.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+
+  const headers = lines[0].split(',').map((h) => h.trim());
+  const rows = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const values = lines[i].split(',');
+    const row = {};
+    headers.forEach((header, index) => {
+      row[header] = values[index] ? values[index].trim() : '';
+    });
+    rows.push(row);
+  }
+
+  return rows;
+}
+
+function loadUsersFromCSV(csvPath) {
+  if (!fs.existsSync(csvPath)) {
+    log('error', `CSV file not found: ${csvPath}`);
+    process.exit(1);
+  }
+  const raw = fs.readFileSync(csvPath, 'utf-8');
+  const rows = parseCSV(raw);
+
+  return rows.map((row) => ({
+    uid: row.uid,
+    email: row.email,
+    displayName: row.displayName,
+    userName: row.userName,
+    photoURL: row.photoURL || '',
+    admin: row.admin === 'true' || row.admin === '1',
+  }));
+}
+
+function loadPredictionsFromCSV(csvPath) {
+  if (!fs.existsSync(csvPath)) {
+    log('error', `CSV file not found: ${csvPath}`);
+    process.exit(1);
+  }
+  const raw = fs.readFileSync(csvPath, 'utf-8');
+  const rows = parseCSV(raw);
+
+  const predictions = {};
+  for (const row of rows) {
+    const uid = row.uid;
+    const gameId = row.gameId;
+    if (!uid || !gameId) continue;
+
+    if (!predictions[uid]) predictions[uid] = {};
+    predictions[uid][gameId] = {
+      homePrediction: parseInt(row.homePrediction, 10),
+      awayPrediction: parseInt(row.awayPrediction, 10),
+    };
+  }
+
+  return predictions;
+}
+
+// ────────────────────────────────────────────────
+// CONFIG LOADER (JSON fallback)
+// ────────────────────────────────────────────────
 
 function loadConfig() {
   if (!fs.existsSync(CONFIG_PATH)) {
-    log('error', `Configuration file not found: ${CONFIG_PATH}`);
-    process.exit(1);
+    return { users: [], predictions: {} };
   }
   const raw = fs.readFileSync(CONFIG_PATH, 'utf-8');
   return JSON.parse(raw);
 }
-
-const config = loadConfig();
-const usersToMigrate = config.users || [];
-const predictionsToMigrate = config.predictions || {};
 
 // ────────────────────────────────────────────────
 // UTILITY FUNCTIONS
@@ -58,7 +126,6 @@ function normalizeUsername(userName) {
 }
 
 function generateUid() {
-  // Generate a Firebase-style UID (28 chars, alphanumeric)
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let uid = '';
   for (let i = 0; i < 28; i++) {
@@ -104,6 +171,43 @@ WARNING: Never commit this file to version control!
     auth: admin.auth(),
     db: admin.database(),
   };
+}
+
+// ────────────────────────────────────────────────
+// MATCHES: FETCH FROM FIREBASE
+// ────────────────────────────────────────────────
+
+async function fetchMatchesFromFirebase(db) {
+  const matchesSnapshot = await db.ref('matches').get();
+  if (!matchesSnapshot.exists()) {
+    log('warn', 'No matches found in Firebase database');
+    return {};
+  }
+  return matchesSnapshot.val();
+}
+
+async function listMatches(db) {
+  const matches = await fetchMatchesFromFirebase(db);
+  const gameIds = Object.keys(matches);
+
+  log('info', `Found ${gameIds.length} matches in Firebase:`);
+  console.log('\n┌───────┬─────────────────────────────┬──────────┬──────────┐');
+  console.log('│ Game  │ Match                       │ Home     │ Away     │');
+  console.log('├───────┼─────────────────────────────┼──────────┼──────────┤');
+
+  for (const gameId of gameIds.sort((a, b) => parseInt(a) - parseInt(b))) {
+    const match = matches[gameId];
+    const home = match.homeName || match.home || '???';
+    const away = match.awayName || match.away || '???';
+    const homeScore = match.homeScore >= 0 ? match.homeScore : '-';
+    const awayScore = match.awayScore >= 0 ? match.awayScore : '-';
+    const result = match.homeScore >= 0 ? `${homeScore}-${awayScore}` : 'vs';
+    const name = `${home} ${result} ${away}`.padEnd(27).substring(0, 27);
+    console.log(`│ ${gameId.toString().padStart(3)}   │ ${name} │ ${home.substring(0, 8).padEnd(8)} │ ${away.substring(0, 8).padEnd(8)} │`);
+  }
+  console.log('└───────┴─────────────────────────────┴──────────┴──────────┘');
+  console.log('');
+  return matches;
 }
 
 // ────────────────────────────────────────────────
@@ -170,7 +274,7 @@ async function migrateUser(auth, db, userData) {
   }
 }
 
-async function migrateAllUsers(auth, db) {
+async function migrateAllUsers(auth, db, usersToMigrate) {
   log('info', `Starting migration of ${usersToMigrate.length} user(s)...`);
   const results = [];
 
@@ -191,24 +295,24 @@ async function migrateAllUsers(auth, db) {
 // ────────────────────────────────────────────────
 
 async function migratePredictions(db, uid, predictions) {
-  const predictionsRef = db.ref(`predictions/${uid}`);
   const predictionsData = {};
   const now = Date.now();
 
   for (const [gameId, pred] of Object.entries(predictions)) {
-    predictionsData[gameId] = {
+    predictionsData[`predictions/${uid}/${gameId}`] = {
       homePrediction: pred.homePrediction,
       awayPrediction: pred.awayPrediction,
-      points: 0, // Points will be calculated by Cloud Functions when match scores update
+      points: 0,
       updatedAt: now,
     };
   }
 
-  await predictionsRef.set(predictionsData);
+  // Use update() on the root to merge predictions without deleting existing ones
+  await db.ref().update(predictionsData);
   log('info', `Migrated ${Object.keys(predictions).length} predictions for ${uid}`);
 }
 
-async function migrateAllPredictions(db) {
+async function migrateAllPredictions(db, predictionsToMigrate) {
   const userIds = Object.keys(predictionsToMigrate);
   log('info', `Starting migration of predictions for ${userIds.length} user(s)...`);
 
@@ -236,7 +340,69 @@ async function migrateAllPredictions(db) {
 }
 
 // ────────────────────────────────────────────────
-// SCORE RECALCULATION (for played matches)
+// GENERATE RANDOM PREDICTIONS
+// ────────────────────────────────────────────────
+
+async function generateRandomPredictions(db, uid, matches) {
+  const predictions = {};
+  const gameIds = Object.keys(matches);
+
+  for (const gameId of gameIds) {
+    const match = matches[gameId];
+    // Only generate predictions for matches that haven't started yet
+    if (match.timestamp * 1000 > Date.now()) {
+      predictions[gameId] = {
+        homePrediction: Math.floor(Math.random() * 4), // 0-3
+        awayPrediction: Math.floor(Math.random() * 4),   // 0-3
+      };
+    }
+  }
+
+  return predictions;
+}
+
+async function generatePredictionsForAllUsers(db, matches) {
+  const usersSnapshot = await db.ref('users').get();
+  if (!usersSnapshot.exists()) {
+    log('warn', 'No users found in database');
+    return;
+  }
+
+  const users = usersSnapshot.val();
+  const userIds = Object.keys(users);
+
+  for (const uid of userIds) {
+    const predictions = await generateRandomPredictions(db, uid, matches);
+    if (Object.keys(predictions).length === 0) {
+      log('info', `No future matches for ${uid}, skipping predictions`);
+      continue;
+    }
+
+    await migratePredictions(db, uid, predictions);
+    log('info', `Generated ${Object.keys(predictions).length} random predictions for ${uid} (${users[uid].userName})`);
+  }
+}
+
+async function generatePredictionsForUser(db, uid, matches) {
+  const userRef = db.ref(`users/${uid}`);
+  const userSnapshot = await userRef.get();
+  if (!userSnapshot.exists()) {
+    log('error', `User ${uid} not found in database`);
+    return;
+  }
+
+  const predictions = await generateRandomPredictions(db, uid, matches);
+  if (Object.keys(predictions).length === 0) {
+    log('info', `No future matches for ${uid}, skipping predictions`);
+    return;
+  }
+
+  await migratePredictions(db, uid, predictions);
+  log('info', `Generated ${Object.keys(predictions).length} random predictions for ${uid}`);
+}
+
+// ────────────────────────────────────────────────
+// SCORE RECALCULATION
 // ────────────────────────────────────────────────
 
 async function recalculateUserScores(db) {
@@ -249,8 +415,7 @@ async function recalculateUserScores(db) {
   }
 
   const users = usersSnapshot.val();
-  const matchesSnapshot = await db.ref('matches').get();
-  const matches = matchesSnapshot.exists() ? matchesSnapshot.val() : {};
+  const matches = await fetchMatchesFromFirebase(db);
 
   for (const [uid, userData] of Object.entries(users)) {
     const predictionsSnapshot = await db.ref(`predictions/${uid}`).get();
@@ -266,7 +431,6 @@ async function recalculateUserScores(db) {
     for (const [gameId, prediction] of Object.entries(predictions)) {
       const match = matches[gameId];
       if (match && match.homeScore >= 0 && match.awayScore >= 0) {
-        // Match has been played, calculate points
         const points = calculatePoints(
           match.homeScore,
           match.awayScore,
@@ -275,7 +439,6 @@ async function recalculateUserScores(db) {
         );
         totalScore += points;
 
-        // Update prediction points if different
         if (prediction.points !== points) {
           await db.ref(`predictions/${uid}/${gameId}/points`).set(points);
         }
@@ -298,18 +461,15 @@ function calculatePoints(homeScore, awayScore, homePrediction, awayPrediction) {
     return 0;
   }
 
-  // Exact score: 15 points
   if (homeScore === homePrediction && awayScore === awayPrediction) {
     return 15;
   }
 
-  // Correct winner: 10 points minus difference (min 0)
   if (getWinner(homeScore, awayScore) === getWinner(homePrediction, awayPrediction)) {
     const difference = Math.abs(homePrediction - homeScore) + Math.abs(awayPrediction - awayScore);
     return Math.max(0, 10 - difference);
   }
 
-  // Wrong winner: 0 points
   return 0;
 }
 
@@ -319,20 +479,69 @@ function calculatePoints(homeScore, awayScore, homePrediction, awayPrediction) {
 
 async function main() {
   const args = process.argv.slice(2);
+
   const migrateUsersFlag = args.includes('--users') || args.length === 0;
   const migratePredictionsFlag = args.includes('--predictions') || args.length === 0;
   const recalculateFlag = args.includes('--recalculate');
+  const listMatchesFlag = args.includes('--list-matches');
+  const generatePredictionsFlag = args.includes('--generate-predictions');
+
+  const usersCsvFlag = args.find((arg) => arg.startsWith('--users-csv='));
+  const predictionsCsvFlag = args.find((arg) => arg.startsWith('--predictions-csv='));
+  const usersCsvPath = usersCsvFlag ? usersCsvFlag.split('=')[1] : DEFAULT_USERS_CSV;
+  const predictionsCsvPath = predictionsCsvFlag ? predictionsCsvFlag.split('=')[1] : DEFAULT_PREDICTIONS_CSV;
 
   const { auth, db } = initializeApp();
 
-  if (migrateUsersFlag) {
-    await migrateAllUsers(auth, db);
+  // List matches from Firebase
+  if (listMatchesFlag) {
+    await listMatches(db);
+    process.exit(0);
   }
 
-  if (migratePredictionsFlag) {
-    await migrateAllPredictions(db);
+  // Generate predictions for a user or all users
+  if (generatePredictionsFlag) {
+    const targetIndex = args.indexOf('--generate-predictions') + 1;
+    const target = args[targetIndex];
+    const matches = await fetchMatchesFromFirebase(db);
+
+    if (!target || target === 'all') {
+      await generatePredictionsForAllUsers(db, matches);
+    } else {
+      await generatePredictionsForUser(db, target, matches);
+    }
+    process.exit(0);
   }
 
+  // Load users from CSV or JSON
+  let usersToMigrate = [];
+  if (args.some((arg) => arg.startsWith('--users-csv='))) {
+    usersToMigrate = loadUsersFromCSV(usersCsvPath);
+  } else if (migrateUsersFlag) {
+    const config = loadConfig();
+    usersToMigrate = config.users || [];
+  }
+
+  // Load predictions from CSV or JSON
+  let predictionsToMigrate = {};
+  if (args.some((arg) => arg.startsWith('--predictions-csv='))) {
+    predictionsToMigrate = loadPredictionsFromCSV(predictionsCsvPath);
+  } else if (migratePredictionsFlag) {
+    const config = loadConfig();
+    predictionsToMigrate = config.predictions || {};
+  }
+
+  // Migrate users
+  if (migrateUsersFlag && usersToMigrate.length > 0) {
+    await migrateAllUsers(auth, db, usersToMigrate);
+  }
+
+  // Migrate predictions
+  if (migratePredictionsFlag && Object.keys(predictionsToMigrate).length > 0) {
+    await migrateAllPredictions(db, predictionsToMigrate);
+  }
+
+  // Recalculate scores
   if (recalculateFlag) {
     await recalculateUserScores(db);
   }
