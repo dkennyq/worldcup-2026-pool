@@ -62,11 +62,10 @@ export const MatchCard = ({
   const [saving, setSaving] = React.useState(false);
 
   // Update local state when prediction prop changes
+  // Always sync to ensure empty prediction clears previous user's input
   React.useEffect(() => {
-    if (prediction) {
-      setHomePrediction(prediction.homePrediction?.toString() ?? '');
-      setAwayPrediction(prediction.awayPrediction?.toString() ?? '');
-    }
+    setHomePrediction(prediction?.homePrediction?.toString() ?? '');
+    setAwayPrediction(prediction?.awayPrediction?.toString() ?? '');
   }, [prediction]);
 
   const handleSavePrediction = async () => {
