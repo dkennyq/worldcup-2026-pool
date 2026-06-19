@@ -1,6 +1,6 @@
 import React from 'react';
 import { type Match, type Prediction, savePrediction } from '../../services';
-import { formatPoints } from '../../utils/format';
+import { formatPoints, calculatePoints } from '../../utils/format';
 import { Card } from '../ui/Card';
 
 // Import all flags dynamically
@@ -108,6 +108,18 @@ export const MatchCard = ({
 
   const showPoints = isPlayed && prediction;
 
+  // Calculate points locally when match has scores
+  // This ensures correct display even if prediction was edited after match started
+  const displayPoints =
+    isPlayed && prediction
+      ? calculatePoints(
+          match.homeScore,
+          match.awayScore,
+          prediction.homePrediction,
+          prediction.awayPrediction
+        )
+      : prediction?.points ?? 0;
+
   return (
     <Card className="p-4 hover:bg-white/10 transition-colors after:hidden">
       {/* Teams and Points Row */}
@@ -205,30 +217,30 @@ export const MatchCard = ({
         {showPoints && (
           <div
             className={`flex flex-col items-center border rounded-lg w-14 ${
-              prediction.points > 0
+              displayPoints > 0
                 ? 'border-green-500/20 bg-green-600/10'
                 : 'border-red-500/20 bg-red-600/10'
             }`}
           >
             <span className="flex-1 flex items-center text-2xl">
-              {prediction.points === 3000
+              {displayPoints === 3000
                 ? '🥳'
-                : prediction.points === 2000
+                : displayPoints === 2000
                   ? '😄'
-                  : prediction.points === 1000
+                  : displayPoints === 1000
                     ? '🤝'
                     : '😔'}
             </span>
             <span
               className={`flex items-center justify-center text-xs px-1 py-0.5 w-14 rounded-b ${
-                prediction.points > 0
+                displayPoints > 0
                   ? 'bg-green-800 text-white'
                   : 'bg-red-800 text-white'
               }`}
             >
-              {prediction.points > 0
-                ? `+${formatPoints(prediction.points)}`
-                : formatPoints(prediction.points)}
+              {displayPoints > 0
+                ? `+${formatPoints(displayPoints)}`
+                : formatPoints(displayPoints)}
             </span>
           </div>
         )}
