@@ -44,9 +44,11 @@ const getWinner = (home: number, away: number): 'home' | 'away' | 'tied' => {
 
 /**
  * Calculate points for a prediction
- * - 15 points: Exact score
- * - Up to 10 points: Correct winner, minus difference from actual score (min 0)
- * - 0 points: Wrong winner or no prediction
+ * New system:
+ * - 3k (3000): Exact score
+ * - 2k (2000): Correct winner (not exact)
+ * - 1k (1000): Correct draw (not exact)
+ * - 0: Wrong result
  */
 const calculatePoints = (
   homeScore: number,
@@ -59,18 +61,24 @@ const calculatePoints = (
     return 0;
   }
 
-  // Exact score: 15 points
+  // Exact score: 3k
   if (homeScore === homePrediction && awayScore === awayPrediction) {
-    return 15;
+    return 3000;
   }
 
-  // Correct winner: 10 points minus difference (min 0)
-  if (getWinner(homeScore, awayScore) === getWinner(homePrediction, awayPrediction)) {
-    const difference = Math.abs(homePrediction - homeScore) + Math.abs(awayPrediction - awayScore);
-    return Math.max(0, 10 - difference);
+  const actualWinner = getWinner(homeScore, awayScore);
+  const predictedWinner = getWinner(homePrediction, awayPrediction);
+
+  if (actualWinner === predictedWinner) {
+    // Correct draw (not exact): 1k
+    if (actualWinner === 'tied') {
+      return 1000;
+    }
+    // Correct winner (not exact): 2k
+    return 2000;
   }
 
-  // Wrong winner: 0 points
+  // Wrong result: 0
   return 0;
 };
 

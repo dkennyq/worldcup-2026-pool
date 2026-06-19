@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth, useLeague } from '../../hooks';
 import { subscribeToLeaderboard, type UserWithId } from '../../services';
 import { getPositionCompact } from '../../utils';
+import { formatScore } from '../../utils/format';
 import { Card, ProfilePicture } from '../ui';
 import { LeaguePicture } from './LeaguePicture';
 import { Podium } from './Podium';
@@ -61,8 +62,7 @@ const UserRow = ({
       <span
         className={`text-white/70 font-medium ${compact ? 'text-sm' : 'text-lg'}`}
       >
-        {user.score}
-        {!compact && <span className="text-sm font-normal"> pts</span>}
+        {formatScore(user.score)}
       </span>
     </Link>
     {onRemove && (

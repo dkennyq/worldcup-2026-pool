@@ -1,5 +1,6 @@
 import React from 'react';
 import { type Match, type Prediction, savePrediction } from '../../services';
+import { formatPoints } from '../../utils/format';
 import { Card } from '../ui/Card';
 
 // Import all flags dynamically
@@ -202,11 +203,13 @@ export const MatchCard = ({
             }`}
           >
             <span className="flex-1 flex items-center text-2xl">
-              {prediction.points === 15
+              {prediction.points === 3000
                 ? '🥳'
-                : prediction.points > 0
+                : prediction.points === 2000
                   ? '😄'
-                  : '😔'}
+                  : prediction.points === 1000
+                    ? '🤝'
+                    : '😔'}
             </span>
             <span
               className={`flex items-center justify-center text-xs px-1 py-0.5 w-14 rounded-b ${
@@ -216,9 +219,8 @@ export const MatchCard = ({
               }`}
             >
               {prediction.points > 0
-                ? `+${prediction.points}`
-                : prediction.points}{' '}
-              pts
+                ? `+${formatPoints(prediction.points)}`
+                : formatPoints(prediction.points)}
             </span>
           </div>
         )}

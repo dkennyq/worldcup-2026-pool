@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { bgImage, worldcupLogo } from '../../assets';
 import { useAuth, useLeague } from '../../hooks';
+import { BackToTop } from './BackToTop';
 import { DevToolsPanel } from './DevToolsPanel';
 import { LeaguePicture } from './LeaguePicture';
 import { Sidebar } from './Sidebar';
@@ -121,6 +122,9 @@ export const AppLayout = ({ children, className = '' }: AppLayoutProps) => {
           </nav>
         </div>
       </div>
+
+      {/* Back to Top (visible when scrolled) */}
+      <BackToTop />
 
       {/* Dev Tools (only in dev mode for admins) */}
       <DevToolsPanel />

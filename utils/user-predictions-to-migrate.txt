@@ -1,0 +1,41 @@
+users uid match:
+Kenny: WGk3HHsJdyNjqHH8YVKfJPahsLU2
+Jf: fU4jaikpckRvUm7hBEoQJiv5PuY2
+Ian: cmAnNbw1DDfClUdoiTlNzmqhOvEZ
+Kai: 7TagHik7YfRrGvTNEbCeXbjQMQv0
+Bj: 4cFSVaP5pu9IeM3avbqxIWQlnYF2
+Emer: QLtMhUlXlwTOckgLWqpN5eKs5fze
+Alejo: kv9i2x25GWv6GxoDts0NpK6zeqCj
+Raul: fTc4dfslPGwslvnp440kCxiiCqqx
+
+----------------------------
+Canada -h vs Qatar 27
+----------------------------
+-> Canada 
+Kai 3-1
+Ian 2-1
+Bj 2-1
+Jf 3-2
+Alejo 3-1
+
+-> Qatar
+Raul 1-0
+
+-> Empate
+Kenny 2-2
+Emer 1-1
+
+----------------------------
+Mexico -h vs Corea del Sur (28)
+----------------------------
+-> Mex
+Kenny 3-2
+Ian 2-1
+Alejo 3-2
+Raul 2-1
+
+-> Corea
+Kai 3-1
+Bj 3-1
+Emer 3-2
+Jf 3-2
