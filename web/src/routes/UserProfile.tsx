@@ -94,7 +94,7 @@ export const UserProfile = () => {
   }, [matches]);
 
   return (
-    <AppLayout>
+    <AppLayout selectedUserId={profileUserId ?? undefined}>
       <div className="pt-8 px-4 pb-8 max-w-4xl mx-auto">
         {loading ? (
           <div className="text-center text-white/70 py-20">Loading...</div>

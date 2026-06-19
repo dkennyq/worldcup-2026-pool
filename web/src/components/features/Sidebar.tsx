@@ -6,7 +6,11 @@ import { LeaderboardList } from './LeaderboardList';
 import { LeaguePicture } from './LeaguePicture';
 import { UserMenu } from './UserMenu';
 
-export const Sidebar = () => {
+type SidebarProps = {
+  selectedUserId?: string;
+};
+
+export const Sidebar = ({ selectedUserId }: SidebarProps) => {
   const { selectedLeague } = useLeague();
 
   return (
@@ -42,7 +46,7 @@ export const Sidebar = () => {
           </div>
         </div>
         <div className="pt-4 flex-1 min-h-0 flex flex-col">
-          <LeaderboardList />
+          <LeaderboardList selectedUserId={selectedUserId} />
         </div>
         {/* Footer Links */}
         <div className="mt-auto p-3 border-t border-white/10">
