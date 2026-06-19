@@ -41,13 +41,12 @@ export const MatchCard = ({
   const predictionsClosed = Date.now() > cutoffTime;
 
   // Match is live if it started but hasn't finished (assume ~2.5 hours for a full match)
-  // TODO: Implement this properly (check FIFA API)
+  // Use matchStatus from FIFA API as source of truth: 0=finished, 1=scheduled, 2+=live
   const kickoffTime = match.timestamp * 1000;
   const matchEndEstimate = kickoffTime + 150 * 60 * 1000; // 2.5 hours after kickoff
-  const isLive =
-    !isPlayed && Date.now() >= kickoffTime && Date.now() < matchEndEstimate;
-  // Match is finished if scores are present AND match end time has passed
-  const isFinished = isPlayed && Date.now() > matchEndEstimate;
+  const isLive = match.matchStatus > 1 || (!isPlayed && Date.now() >= kickoffTime && Date.now() < matchEndEstimate);
+  // Match is finished if matchStatus is 0 (FIFA API) OR scores present AND match end time has passed
+  const isFinished = match.matchStatus === 0 || (isPlayed && Date.now() > matchEndEstimate);
   // Regular users: can predict only their own matches before cutoff
   // Admins: can edit any prediction while match is not finished (in progress or not started)
   const canPredict =
@@ -257,17 +256,16 @@ export const MatchCard = ({
         <span>
           {dateString}, {timeString}
         </span>
-        {match.matchTime && match.matchStatus !== 0 && (
+        {isLive && match.matchTime && match.matchTime !== '' ? (
           <span className="ml-auto font-mono font-bold text-[#00ff00] animate-pulse">
             {match.matchTime}
           </span>
-        )}
-        {isLive && !match.matchTime && (
+        ) : isLive ? (
           <span className="ml-auto flex items-center gap-1.5 text-red-500 font-bold animate-pulse">
             <span className="w-2 h-2 bg-red-500 rounded-full" />
             LIVE
           </span>
-        )}
+        ) : null}
       </div>
     </Card>
   );
