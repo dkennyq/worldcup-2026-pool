@@ -1,6 +1,8 @@
 {
   "projects": {
-    "default": "worldcup-2026"
-  }
+    "default": "arenavault-d9f7f",
+    "arenavault-stg": "arenavault-d9f7f"
+  },
+  "targets": {},
+  "etags": {}
 }
-

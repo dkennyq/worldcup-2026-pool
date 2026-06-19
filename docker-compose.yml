@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    container_name: worldcup-2026-web
+    restart: unless-stopped
+    # If you need to pass environment variables at runtime (for dynamic config):
+    # env_file:
+    #   - ./web/.env
+
+  # Optional: Firebase Functions local emulator
+  # Uncomment below to run functions locally (requires Firebase project setup)
+  # functions:
+  #   build:
+  #     context: ./functions
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "5001:5001"
+  #   container_name: worldcup-2026-functions
+  #   environment:
+  #     - GOOGLE_APPLICATION_CREDENTIALS=/app/service-account.json
+  #   volumes:
+  #     - ./service-account.json:/app/service-account.json:ro
+  #   restart: unless-stopped
+
+  # Optional: Firebase Emulators for local development
+  # firebase-emulators:
+  #   image: andreysenov/firebase-tools:latest
+  #   command: firebase emulators:start --only auth,database,functions,hosting
+  #   ports:
+  #     - "4000:4000"  # Emulator Suite UI
+  #     - "5001:5001"  # Functions
+  #     - "9000:9000"  # Realtime Database
+  #     - "9099:9099"  # Auth
+  #     - "8080:8080"  # Hosting (if using emulator hosting)
+  #   volumes:
+  #     - .:/home/node
+  #     - ./firebase.json:/home/node/firebase.json
+  #     - ./.firebaserc:/home/node/.firebaserc
+  #     - ./database.rules.json:/home/node/database.rules.json
+  #   working_dir: /home/node
+  #   container_name: worldcup-2026-emulators
+  #   restart: unless-stopped

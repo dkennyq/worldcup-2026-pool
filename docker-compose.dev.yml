@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    container_name: worldcup-2026-web
+    restart: unless-stopped
+
+  # Firebase Emulators for local development
+  firebase-emulators:
+    image: andreysenov/firebase-tools:latest
+    command: firebase emulators:start --only auth,database,functions
+    ports:
+      - "4000:4000"  # Emulator Suite UI
+      - "5001:5001"  # Functions
+      - "9000:9000"  # Realtime Database
+      - "9099:9099"  # Auth
+    volumes:
+      - .:/home/node
+      - /home/node/web/node_modules
+      - /home/node/functions/node_modules
+      - /home/node/node_modules
+    working_dir: /home/node
+    container_name: worldcup-2026-emulators
+    restart: unless-stopped

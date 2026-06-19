@@ -163,6 +163,8 @@ firebase emulators:start
 
 ## Deployment
 
+### Firebase Deployment
+
 ```bash
 # Deploy everything
 firebase deploy
@@ -173,6 +175,48 @@ firebase deploy --only hosting
 # Deploy only functions
 firebase deploy --only functions
 ```
+
+### Docker Deployment
+
+You can also deploy the application using Docker.
+
+#### Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
+
+#### Production (Frontend Only)
+
+The frontend is built and served via nginx in a Docker container.
+
+```bash
+# Build and start the web application
+docker-compose up --build -d
+
+# Access the application at http://localhost:8080
+```
+
+To stop the container:
+
+```bash
+docker-compose down
+```
+
+#### Development (with Firebase Emulators)
+
+For local development with Firebase emulators:
+
+```bash
+# Start both the web app and Firebase emulators
+docker-compose -f docker-compose.dev.yml up --build
+
+# Access the web app at http://localhost:8080
+# Access the Firebase Emulator UI at http://localhost:4000
+```
+
+**Note:** The Docker setup for the web app builds the Vite application with the existing `.env` configuration. If you need to change Firebase settings, update `web/.env` before building.
+
+**Note on Firebase Functions:** Firebase Cloud Functions are designed to run in the Firebase/Google Cloud environment. The Docker setup provided is primarily for the frontend SPA. For local function testing, use the Firebase Emulator Suite (see `docker-compose.dev.yml`) or run `firebase emulators:start` locally.
 
 ## Code Conventions
 
