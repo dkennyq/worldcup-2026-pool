@@ -139,6 +139,15 @@ export const LeaderboardList = ({
     }
   };
 
+  // Show indicator when viewing another user's profile
+  const isViewingOtherUser =
+    selectedUserId && selectedUserId !== currentUser?.uid;
+  const selectedUserName = React.useMemo(() => {
+    if (!isViewingOtherUser) return null;
+    const user = users.find((u) => u.id === selectedUserId);
+    return user?.displayName || null;
+  }, [users, selectedUserId, isViewingOtherUser]);
+
   if (loading) {
     return (
       <div className="text-white/50 text-sm text-center py-4">Loading...</div>
@@ -154,15 +163,6 @@ export const LeaderboardList = ({
   }
 
   const isCompact = variant === 'compact';
-
-  // Show indicator when viewing another user's profile
-  const isViewingOtherUser =
-    selectedUserId && selectedUserId !== currentUser?.uid;
-  const selectedUserName = React.useMemo(() => {
-    if (!isViewingOtherUser) return null;
-    const user = users.find((u) => u.id === selectedUserId);
-    return user?.displayName || null;
-  }, [users, selectedUserId, isViewingOtherUser]);
 
   // Split users for podium display (full variant only)
   const podiumUsers = !isCompact && users.length >= 3 ? users.slice(0, 3) : [];
