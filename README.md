@@ -218,6 +218,24 @@ docker-compose -f docker-compose.dev.yml up --build
 
 **Note on Firebase Functions:** Firebase Cloud Functions are designed to run in the Firebase/Google Cloud environment. The Docker setup provided is primarily for the frontend SPA. For local function testing, use the Firebase Emulator Suite (see `docker-compose.dev.yml`) or run `firebase emulators:start` locally.
 
+## Data Migration
+
+For importing users and historical predictions from another system, use the provided migration script.
+
+See [`utils/MIGRATION.md`](utils/MIGRATION.md) for detailed instructions.
+
+Quick start:
+```bash
+# Install dependency
+npm install firebase-admin
+
+# Place your service-account.json in project root
+# Edit utils/migrate-config.json with your users and predictions
+
+# Run migration
+node utils/migrate.js
+```
+
 ## Code Conventions
 
 - **2-space indentation** across all files
