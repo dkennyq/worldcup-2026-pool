@@ -19,6 +19,7 @@ const getFlag = (code: string): string => {
 type MatchCardProps = {
   match: Match;
   isOwnProfile?: boolean;
+  isAdmin?: boolean;
   userId?: string;
   prediction?: Prediction;
 };
@@ -26,6 +27,7 @@ type MatchCardProps = {
 export const MatchCard = ({
   match,
   isOwnProfile = false,
+  isAdmin = false,
   userId,
   prediction,
 }: MatchCardProps) => {
@@ -44,7 +46,11 @@ export const MatchCard = ({
   const matchEndEstimate = kickoffTime + 150 * 60 * 1000; // 2.5 hours after kickoff
   const isLive =
     !isPlayed && Date.now() >= kickoffTime && Date.now() < matchEndEstimate;
-  const canPredict = isOwnProfile && userId && !predictionsClosed;
+  // Regular users: can predict only their own matches before cutoff
+  // Admins: can edit any prediction while match is not finished
+  const canPredict =
+    (isOwnProfile && userId && !predictionsClosed) ||
+    (isAdmin && userId && !isPlayed);
 
   const [homePrediction, setHomePrediction] = React.useState<string>(
     prediction?.homePrediction?.toString() ?? ''

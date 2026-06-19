@@ -25,8 +25,9 @@ export const UserProfile = () => {
   const [profileUserId, setProfileUserId] = React.useState<string | null>(null);
   const [profileLoading, setProfileLoading] = React.useState(true);
 
-  // Determine if viewing own profile
+  // Determine if viewing own profile and if current user is admin
   const isOwnProfile = userData?.userName === userName;
+  const isAdmin = userData?.admin === true;
 
   // Reset state when userName changes to prevent stale data flash
   React.useEffect(() => {
@@ -121,6 +122,7 @@ export const UserProfile = () => {
                 <MatchesByDay
                   matches={matches}
                   isOwnProfile={isOwnProfile}
+                  isAdmin={isAdmin}
                   userId={profileUserId ?? undefined}
                   predictions={predictions}
                 />
@@ -128,6 +130,7 @@ export const UserProfile = () => {
                 <MatchesByGroup
                   matches={matches}
                   isOwnProfile={isOwnProfile}
+                  isAdmin={isAdmin}
                   userId={profileUserId ?? undefined}
                   predictions={predictions}
                 />
