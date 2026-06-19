@@ -1,6 +1,7 @@
 import React from 'react';
 import { ProfilePicture } from '../ui/ProfilePicture';
 import { getMedalOrPosition, getPositionColor } from '../../utils';
+import { formatScore } from '../../utils/format';
 import { useLeague } from '../../hooks';
 import {
   subscribeToLeaderboard,
@@ -69,7 +70,7 @@ export const UserHeader = ({ userId, className = '' }: UserHeaderProps) => {
         <div className="flex items-center gap-3 text-white/70 text-sm flex-wrap">
           <span>@{user.userName}</span>
           <span>·</span>
-          <span>{user.score} pts</span>
+          <span>{formatScore(user.score)}</span>
           {position !== null && (
             <>
               <span>·</span>

@@ -12,18 +12,8 @@
   ],
   "predictions": {
     "fU4jaikpckRvUm7hBEoQJiv5PuY2": {
-      "1": { "homePrediction": 2, "awayPrediction": 0 },
-      "2": { "homePrediction": 1, "awayPrediction": 1 },
-      "3": { "homePrediction": 3, "awayPrediction": 1 },
-      "4": { "homePrediction": 0, "awayPrediction": 2 },
-      "5": { "homePrediction": 2, "awayPrediction": 2 },
-      "6": { "homePrediction": 1, "awayPrediction": 0 },
-      "7": { "homePrediction": 0, "awayPrediction": 0 },
-      "8": { "homePrediction": 2, "awayPrediction": 1 },
-      "9": { "homePrediction": 1, "awayPrediction": 3 },
-      "10": { "homePrediction": 2, "awayPrediction": 0 },
-      "11": { "homePrediction": 1, "awayPrediction": 1 },
-      "12": { "homePrediction": 0, "awayPrediction": 1 }
+      "3": { "homePrediction": 1, "awayPrediction": 1 },
+      "4": { "homePrediction": 2, "awayPrediction": 1 }
     }
   }
 }

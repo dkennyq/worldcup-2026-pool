@@ -1,4 +1,5 @@
 export { AppLayout } from './AppLayout';
+export { BackToTop } from './BackToTop';
 export { DevToolsPanel } from './DevToolsPanel';
 export { LeaderboardList } from './LeaderboardList';
 export { LeaguePicture } from './LeaguePicture';

@@ -48,7 +48,7 @@ export const MatchesByDay = ({
   return (
     <div className="flex flex-col gap-6">
       {sortedDays.map((day) => (
-        <div key={day}>
+        <div key={day} id={`day-${day}`}>
           <h3 className="text-lg font-semibold mb-3 text-white/80 pb-2">
             {day}
           </h3>

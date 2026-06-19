@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks';
 import { type UserWithId } from '../../services';
+import { formatScore } from '../../utils/format';
 import { ProfilePicture } from '../ui/ProfilePicture';
 
 // Podium item component
@@ -72,7 +73,7 @@ const PodiumItem = ({
         @{user.userName}
       </span>
       <span className="text-white font-bold mt-2 text-sm sm:text-lg">
-        {user.score} pts
+        {formatScore(user.score)}
       </span>
     </div>
     {/* Elliptical shadow from object above */}

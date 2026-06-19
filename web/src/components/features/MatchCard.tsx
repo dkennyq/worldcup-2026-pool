@@ -1,5 +1,6 @@
 import React from 'react';
 import { type Match, type Prediction, savePrediction } from '../../services';
+import { formatPoints } from '../../utils/format';
 import { Card } from '../ui/Card';
 
 // Import all flags dynamically
@@ -218,9 +219,8 @@ export const MatchCard = ({
               }`}
             >
               {prediction.points > 0
-                ? `+${prediction.points}`
-                : prediction.points}{' '}
-              pts
+                ? `+${formatPoints(prediction.points)}`
+                : formatPoints(prediction.points)}
             </span>
           </div>
         )}
