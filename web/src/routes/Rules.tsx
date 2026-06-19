@@ -32,10 +32,10 @@ export const Rules = () => {
               <span className="text-2xl">🥳</span>
               <div>
                 <h3 className="font-semibold text-white">
-                  Exact Score — 15 points
+                  Exact Score — 3k
                 </h3>
                 <p className="text-sm">
-                  Predict the exact final score of both teams.
+                  Predict the exact final score of both teams. Earns 3k (3000).
                 </p>
               </div>
             </div>
@@ -44,11 +44,22 @@ export const Rules = () => {
               <span className="text-2xl">😄</span>
               <div>
                 <h3 className="font-semibold text-white">
-                  Correct Result — Up to 10 points
+                  Correct Winner — 2k
                 </h3>
                 <p className="text-sm">
-                  Predict the correct winner (or draw), but not the exact score.
-                  Points = 10 minus the difference from the actual scores.
+                  Predict the correct winner, but not the exact score. Earns 2k (2000).
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">🤝</span>
+              <div>
+                <h3 className="font-semibold text-white">
+                  Correct Draw — 1k
+                </h3>
+                <p className="text-sm">
+                  Predict a draw (not the exact score). Earns 1k (1000).
                 </p>
               </div>
             </div>
@@ -57,7 +68,7 @@ export const Rules = () => {
               <span className="text-2xl">😔</span>
               <div>
                 <h3 className="font-semibold text-white">
-                  Wrong Result — 0 points
+                  Wrong Result — 0
                 </h3>
                 <p className="text-sm">
                   Predict the wrong winner or miss a draw.
@@ -88,7 +99,7 @@ export const Rules = () => {
               <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                 <span className="text-white/60 text-sm">Points Earned</span>
                 <span className="text-green-400 font-bold">
-                  🥳 15 points (Exact!)
+                  🥳 3k (Exact!)
                 </span>
               </div>
             </div>
@@ -109,12 +120,7 @@ export const Rules = () => {
               </div>
               <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                 <span className="text-white/60 text-sm">Points Earned</span>
-                <div className="md:text-right">
-                  <span className="text-yellow-400 font-bold">😄 8 points</span>
-                  <div className="text-white/40 text-xs font-mono">
-                    10 - |3-2| - |0-1| = 8
-                  </div>
-                </div>
+                <span className="text-yellow-400 font-bold">😄 2k (Correct winner)</span>
               </div>
             </div>
 
@@ -134,12 +140,7 @@ export const Rules = () => {
               </div>
               <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                 <span className="text-white/60 text-sm">Points Earned</span>
-                <div className="md:text-right">
-                  <span className="text-yellow-400 font-bold">😄 6 points</span>
-                  <div className="text-white/40 text-xs font-mono">
-                    10 - |0-2| - |0-2| = 6
-                  </div>
-                </div>
+                <span className="text-yellow-400 font-bold">🤝 1k (Correct draw)</span>
               </div>
             </div>
 

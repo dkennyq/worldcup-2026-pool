@@ -461,15 +461,24 @@ function calculatePoints(homeScore, awayScore, homePrediction, awayPrediction) {
     return 0;
   }
 
+  // Exact score: 3k
   if (homeScore === homePrediction && awayScore === awayPrediction) {
-    return 15;
+    return 3000;
   }
 
-  if (getWinner(homeScore, awayScore) === getWinner(homePrediction, awayPrediction)) {
-    const difference = Math.abs(homePrediction - homeScore) + Math.abs(awayPrediction - awayScore);
-    return Math.max(0, 10 - difference);
+  const actualWinner = getWinner(homeScore, awayScore);
+  const predictedWinner = getWinner(homePrediction, awayPrediction);
+
+  if (actualWinner === predictedWinner) {
+    // Correct draw (not exact): 1k
+    if (actualWinner === 'tied') {
+      return 1000;
+    }
+    // Correct winner (not exact): 2k
+    return 2000;
   }
 
+  // Wrong result: 0
   return 0;
 }
 
