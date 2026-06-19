@@ -8,6 +8,7 @@ import { MatchCard } from './MatchCard';
 type MatchesByGroupProps = {
   matches: MatchesData;
   isOwnProfile?: boolean;
+  isAdmin?: boolean;
   userId?: string;
   predictions?: UserPredictions;
 };
@@ -15,6 +16,7 @@ type MatchesByGroupProps = {
 export const MatchesByGroup = ({
   matches,
   isOwnProfile,
+  isAdmin,
   userId,
   predictions,
 }: MatchesByGroupProps) => {
@@ -64,6 +66,7 @@ export const MatchesByGroup = ({
                   key={match.game}
                   match={match}
                   isOwnProfile={isOwnProfile}
+                  isAdmin={isAdmin}
                   userId={userId}
                   prediction={predictions?.[match.game]}
                 />

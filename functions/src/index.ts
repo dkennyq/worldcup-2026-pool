@@ -15,6 +15,8 @@ interface Match {
   fifaId: string;
   homeScore: number;
   awayScore: number;
+  matchTime: string | null;
+  matchStatus: number;
 }
 
 interface Prediction {
@@ -27,6 +29,8 @@ interface FifaMatch {
   IdMatch: string;
   Home: { Score: number | null };
   Away: { Score: number | null };
+  MatchTime: string | null;
+  MatchStatus: number;
 }
 
 interface FifaApiResponse {
@@ -109,13 +113,15 @@ export const updateMatchScores = onSchedule('every 1 minutes', async () => {
     }
 
     // Update scores for matching games
-    const updates: Record<string, number> = {};
+    const updates: Record<string, number | string | null> = {};
 
     for (const fifaMatch of data.Results) {
       for (const [gameId, match] of Object.entries(matches)) {
         if (match.fifaId === fifaMatch.IdMatch) {
           const homeScore = fifaMatch.Home?.Score ?? -1;
           const awayScore = fifaMatch.Away?.Score ?? -1;
+          const matchTime = fifaMatch.MatchTime ?? null;
+          const matchStatus = fifaMatch.MatchStatus ?? 1;
 
           if (match.homeScore !== homeScore && homeScore >= 0) {
             updates[`matches/${gameId}/homeScore`] = homeScore;
@@ -125,6 +131,16 @@ export const updateMatchScores = onSchedule('every 1 minutes', async () => {
           if (match.awayScore !== awayScore && awayScore >= 0) {
             updates[`matches/${gameId}/awayScore`] = awayScore;
             logger.info(`Updated game ${gameId} away score: ${awayScore}`);
+          }
+
+          if (match.matchTime !== matchTime) {
+            updates[`matches/${gameId}/matchTime`] = matchTime;
+            logger.info(`Updated game ${gameId} match time: ${matchTime}`);
+          }
+
+          if (match.matchStatus !== matchStatus) {
+            updates[`matches/${gameId}/matchStatus`] = matchStatus;
+            logger.info(`Updated game ${gameId} match status: ${matchStatus}`);
           }
         }
       }

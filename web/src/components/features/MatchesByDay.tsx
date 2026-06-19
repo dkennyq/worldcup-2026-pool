@@ -8,6 +8,7 @@ import { MatchCard } from './MatchCard';
 type MatchesByDayProps = {
   matches: MatchesData;
   isOwnProfile?: boolean;
+  isAdmin?: boolean;
   userId?: string;
   predictions?: UserPredictions;
 };
@@ -15,6 +16,7 @@ type MatchesByDayProps = {
 export const MatchesByDay = ({
   matches,
   isOwnProfile,
+  isAdmin,
   userId,
   predictions,
 }: MatchesByDayProps) => {
@@ -60,6 +62,7 @@ export const MatchesByDay = ({
                   key={match.game}
                   match={match}
                   isOwnProfile={isOwnProfile}
+                  isAdmin={isAdmin}
                   userId={userId}
                   prediction={predictions?.[match.game]}
                 />

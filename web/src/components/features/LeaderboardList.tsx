@@ -13,18 +13,21 @@ type LeaderboardProps = {
   variant?: 'compact' | 'full';
   users?: UserWithId[];
   onRemoveMember?: (userId: string, displayName: string) => void;
+  selectedUserId?: string;
 };
 
 const UserRow = ({
   user,
   position,
   isCurrentUser,
+  isSelectedUser,
   compact,
   onRemove,
 }: {
   user: UserWithId;
   position: number;
   isCurrentUser: boolean;
+  isSelectedUser: boolean;
   compact: boolean;
   onRemove?: () => void;
 }) => (
@@ -32,7 +35,9 @@ const UserRow = ({
     className={`flex items-center gap-2 rounded-lg transition-colors px-2 py-1.5 ${
       isCurrentUser
         ? 'border border-white/20 backdrop-blur-lg bg-white/10 hover:bg-white/15'
-        : 'hover:bg-white/5'
+        : isSelectedUser
+          ? 'border border-yellow-500/30 bg-yellow-500/10 hover:bg-yellow-500/15'
+          : 'hover:bg-white/5'
     }`}
   >
     <Link
@@ -81,6 +86,7 @@ export const LeaderboardList = ({
   variant = 'compact',
   users: externalUsers,
   onRemoveMember,
+  selectedUserId,
 }: LeaderboardProps) => {
   const { user: currentUser } = useAuth();
   const { leagues, selectedLeague, setSelectedLeague, leagueMemberIds } =
@@ -133,6 +139,15 @@ export const LeaderboardList = ({
     }
   };
 
+  // Show indicator when viewing another user's profile
+  const isViewingOtherUser =
+    selectedUserId && selectedUserId !== currentUser?.uid;
+  const selectedUserName = React.useMemo(() => {
+    if (!isViewingOtherUser) return null;
+    const user = users.find((u) => u.id === selectedUserId);
+    return user?.displayName || null;
+  }, [users, selectedUserId, isViewingOtherUser]);
+
   if (loading) {
     return (
       <div className="text-white/50 text-sm text-center py-4">Loading...</div>
@@ -155,6 +170,13 @@ export const LeaderboardList = ({
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
+      {/* Selected user indicator */}
+      {isViewingOtherUser && selectedUserName && (
+        <div className="mx-4 mb-2 px-3 py-1.5 bg-white/10 border border-white/20 rounded-lg text-xs text-white/80">
+          <span className="text-white/50">Viewing:</span>{' '}
+          <span className="font-medium text-white">{selectedUserName}</span>
+        </div>
+      )}
       {isCompact &&
         (leagues.length > 0 ? (
           <div ref={dropdownRef} className="relative px-4 mb-2">
@@ -246,6 +268,7 @@ export const LeaderboardList = ({
                 user={user}
                 position={index + 1}
                 isCurrentUser={currentUser?.uid === user.id}
+                isSelectedUser={selectedUserId === user.id}
                 compact
                 onRemove={
                   onRemoveMember
@@ -266,6 +289,7 @@ export const LeaderboardList = ({
                 user={user}
                 position={users.length >= 3 ? index + 4 : index + 1}
                 isCurrentUser={currentUser?.uid === user.id}
+                isSelectedUser={selectedUserId === user.id}
                 compact={false}
                 onRemove={
                   onRemoveMember

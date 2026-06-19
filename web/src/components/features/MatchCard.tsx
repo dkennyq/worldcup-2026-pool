@@ -1,6 +1,6 @@
 import React from 'react';
 import { type Match, type Prediction, savePrediction } from '../../services';
-import { formatPoints } from '../../utils/format';
+import { formatPoints, calculatePoints } from '../../utils/format';
 import { Card } from '../ui/Card';
 
 // Import all flags dynamically
@@ -19,6 +19,7 @@ const getFlag = (code: string): string => {
 type MatchCardProps = {
   match: Match;
   isOwnProfile?: boolean;
+  isAdmin?: boolean;
   userId?: string;
   prediction?: Prediction;
 };
@@ -26,6 +27,7 @@ type MatchCardProps = {
 export const MatchCard = ({
   match,
   isOwnProfile = false,
+  isAdmin = false,
   userId,
   prediction,
 }: MatchCardProps) => {
@@ -39,12 +41,17 @@ export const MatchCard = ({
   const predictionsClosed = Date.now() > cutoffTime;
 
   // Match is live if it started but hasn't finished (assume ~2.5 hours for a full match)
-  // TODO: Implement this properly (check FIFA API)
+  // Use matchStatus from FIFA API as source of truth: 0=finished, 1=scheduled, 2+=live
   const kickoffTime = match.timestamp * 1000;
   const matchEndEstimate = kickoffTime + 150 * 60 * 1000; // 2.5 hours after kickoff
-  const isLive =
-    !isPlayed && Date.now() >= kickoffTime && Date.now() < matchEndEstimate;
-  const canPredict = isOwnProfile && userId && !predictionsClosed;
+  const isLive = match.matchStatus > 1 || (!isPlayed && Date.now() >= kickoffTime && Date.now() < matchEndEstimate);
+  // Match is finished if matchStatus is 0 (FIFA API) OR scores present AND match end time has passed
+  const isFinished = match.matchStatus === 0 || (isPlayed && Date.now() > matchEndEstimate);
+  // Regular users: can predict only their own matches before cutoff
+  // Admins: can edit any prediction while match is not finished (in progress or not started)
+  const canPredict =
+    (isOwnProfile && userId && !predictionsClosed) ||
+    (isAdmin && userId && !isFinished);
 
   const [homePrediction, setHomePrediction] = React.useState<string>(
     prediction?.homePrediction?.toString() ?? ''
@@ -55,11 +62,10 @@ export const MatchCard = ({
   const [saving, setSaving] = React.useState(false);
 
   // Update local state when prediction prop changes
+  // Always sync to ensure empty prediction clears previous user's input
   React.useEffect(() => {
-    if (prediction) {
-      setHomePrediction(prediction.homePrediction?.toString() ?? '');
-      setAwayPrediction(prediction.awayPrediction?.toString() ?? '');
-    }
+    setHomePrediction(prediction?.homePrediction?.toString() ?? '');
+    setAwayPrediction(prediction?.awayPrediction?.toString() ?? '');
   }, [prediction]);
 
   const handleSavePrediction = async () => {
@@ -99,6 +105,18 @@ export const MatchCard = ({
   });
 
   const showPoints = isPlayed && prediction;
+
+  // Calculate points locally when match has scores
+  // This ensures correct display even if prediction was edited after match started
+  const displayPoints =
+    isPlayed && prediction
+      ? calculatePoints(
+          match.homeScore,
+          match.awayScore,
+          prediction.homePrediction,
+          prediction.awayPrediction
+        )
+      : prediction?.points ?? 0;
 
   return (
     <Card className="p-4 hover:bg-white/10 transition-colors after:hidden">
@@ -197,30 +215,30 @@ export const MatchCard = ({
         {showPoints && (
           <div
             className={`flex flex-col items-center border rounded-lg w-14 ${
-              prediction.points > 0
+              displayPoints > 0
                 ? 'border-green-500/20 bg-green-600/10'
                 : 'border-red-500/20 bg-red-600/10'
             }`}
           >
             <span className="flex-1 flex items-center text-2xl">
-              {prediction.points === 3000
+              {displayPoints === 3000
                 ? '🥳'
-                : prediction.points === 2000
+                : displayPoints === 2000
                   ? '😄'
-                  : prediction.points === 1000
+                  : displayPoints === 1000
                     ? '🤝'
                     : '😔'}
             </span>
             <span
               className={`flex items-center justify-center text-xs px-1 py-0.5 w-14 rounded-b ${
-                prediction.points > 0
+                displayPoints > 0
                   ? 'bg-green-800 text-white'
                   : 'bg-red-800 text-white'
               }`}
             >
-              {prediction.points > 0
-                ? `+${formatPoints(prediction.points)}`
-                : formatPoints(prediction.points)}
+              {displayPoints > 0
+                ? `+${formatPoints(displayPoints)}`
+                : formatPoints(displayPoints)}
             </span>
           </div>
         )}
@@ -237,12 +255,16 @@ export const MatchCard = ({
         <span>
           {dateString}, {timeString}
         </span>
-        {isLive && (
+        {isLive && match.matchTime && match.matchTime !== '' ? (
+          <span className="ml-auto font-mono font-bold text-[#00ff00] animate-pulse">
+            {match.matchTime}
+          </span>
+        ) : isLive ? (
           <span className="ml-auto flex items-center gap-1.5 text-red-500 font-bold animate-pulse">
             <span className="w-2 h-2 bg-red-500 rounded-full" />
             LIVE
           </span>
-        )}
+        ) : null}
       </div>
     </Card>
   );

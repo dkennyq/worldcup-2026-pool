@@ -11,9 +11,10 @@ import { UserMenu } from './UserMenu';
 type AppLayoutProps = {
   children: React.ReactNode;
   className?: string;
+  selectedUserId?: string;
 };
 
-export const AppLayout = ({ children, className = '' }: AppLayoutProps) => {
+export const AppLayout = ({ children, className = '', selectedUserId }: AppLayoutProps) => {
   const { userData } = useAuth();
   const { selectedLeague } = useLeague();
 
@@ -48,7 +49,7 @@ export const AppLayout = ({ children, className = '' }: AppLayoutProps) => {
       <div className="flex min-h-screen text-white">
         {/* Desktop sidebar */}
         <div className="hidden md:block">
-          <Sidebar />
+          <Sidebar selectedUserId={selectedUserId} />
         </div>
 
         {/* Mobile header + content */}

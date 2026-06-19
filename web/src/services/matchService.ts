@@ -21,6 +21,8 @@ export interface Match {
   away: string;
   awayName: string;
   awayScore: number;
+  matchTime: string | null;
+  matchStatus: number;
 }
 
 export interface MatchesData {
@@ -49,6 +51,8 @@ interface FifaApiMatch {
   };
   PlaceHolderA: string;
   PlaceHolderB: string;
+  MatchTime: string | null;
+  MatchStatus: number;
 }
 
 interface FifaApiResponse {
@@ -105,6 +109,8 @@ const transformFifaData = (results: FifaApiMatch[]): MatchesData => {
       away,
       awayName,
       awayScore: item.Away?.Score ?? -1,
+      matchTime: item.MatchTime ?? null,
+      matchStatus: item.MatchStatus ?? 1,
     };
   });
 
