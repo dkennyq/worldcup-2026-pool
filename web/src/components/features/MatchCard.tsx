@@ -46,11 +46,13 @@ export const MatchCard = ({
   const matchEndEstimate = kickoffTime + 150 * 60 * 1000; // 2.5 hours after kickoff
   const isLive =
     !isPlayed && Date.now() >= kickoffTime && Date.now() < matchEndEstimate;
+  // Match is finished if scores are present AND match end time has passed
+  const isFinished = isPlayed && Date.now() > matchEndEstimate;
   // Regular users: can predict only their own matches before cutoff
-  // Admins: can edit any prediction while match is not finished
+  // Admins: can edit any prediction while match is not finished (in progress or not started)
   const canPredict =
     (isOwnProfile && userId && !predictionsClosed) ||
-    (isAdmin && userId && !isPlayed);
+    (isAdmin && userId && !isFinished);
 
   const [homePrediction, setHomePrediction] = React.useState<string>(
     prediction?.homePrediction?.toString() ?? ''
