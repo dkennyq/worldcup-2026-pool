@@ -257,7 +257,12 @@ export const MatchCard = ({
         <span>
           {dateString}, {timeString}
         </span>
-        {isLive && (
+        {match.matchTime && match.matchStatus !== 0 && (
+          <span className="ml-auto font-mono font-bold text-[#00ff00] animate-pulse">
+            {match.matchTime}
+          </span>
+        )}
+        {isLive && !match.matchTime && (
           <span className="ml-auto flex items-center gap-1.5 text-red-500 font-bold animate-pulse">
             <span className="w-2 h-2 bg-red-500 rounded-full" />
             LIVE
