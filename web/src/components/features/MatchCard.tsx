@@ -48,10 +48,11 @@ export const MatchCard = ({
   // Match is finished if matchStatus is 0 (FIFA API) OR scores present AND match end time has passed
   const isFinished = match.matchStatus === 0 || (isPlayed && Date.now() > matchEndEstimate);
   // Regular users: can predict only their own matches before cutoff
-  // Admins: can edit any prediction while match is not finished (in progress or not started)
+  // Admins: can edit existing predictions while match is not finished
+  // Admins: can add missing predictions for ANY match (even finished)
   const canPredict =
     (isOwnProfile && userId && !predictionsClosed) ||
-    (isAdmin && userId && !isFinished);
+    (isAdmin && userId && (!isFinished || !prediction));
 
   const [homePrediction, setHomePrediction] = React.useState<string>(
     prediction?.homePrediction?.toString() ?? ''
