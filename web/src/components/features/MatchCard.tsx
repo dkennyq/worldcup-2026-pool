@@ -54,6 +54,12 @@ export const MatchCard = ({
     (isOwnProfile && userId && !predictionsClosed) ||
     (isAdmin && userId && (!isFinished || !prediction));
 
+  // Permission to view predictions:
+  // - Admins can always view
+  // - Users can view their own predictions
+  // - Non-admins can only view others' predictions after cutoff (when they can no longer edit)
+  const canViewPrediction = isAdmin || isOwnProfile || predictionsClosed;
+
   const [homePrediction, setHomePrediction] = React.useState<string>(
     prediction?.homePrediction?.toString() ?? ''
   );
@@ -105,7 +111,7 @@ export const MatchCard = ({
     day: 'numeric',
   });
 
-  const showPoints = isPlayed && prediction;
+  const showPoints = isPlayed && prediction && canViewPrediction;
 
   // Calculate points locally when match has scores
   // This ensures correct display even if prediction was edited after match started
@@ -161,7 +167,7 @@ export const MatchCard = ({
                 data-form-type="other"
               />
             )}
-            {!canPredict && prediction && (
+            {!canPredict && prediction && canViewPrediction && (
               <span className={predictionClass}>
                 {prediction.homePrediction}
               </span>
@@ -204,7 +210,7 @@ export const MatchCard = ({
                 data-form-type="other"
               />
             )}
-            {!canPredict && prediction && (
+            {!canPredict && prediction && canViewPrediction && (
               <span className={predictionClass}>
                 {prediction.awayPrediction}
               </span>
