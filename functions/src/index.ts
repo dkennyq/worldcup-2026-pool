@@ -221,6 +221,67 @@ export const updatePredictionPoints = onValueWritten(
 );
 
 /**
+ * Triggered when a prediction is created or updated
+ * Recalculates points if the match has scores
+ * This allows admin to add/edit predictions for any match and get points calculated
+ */
+export const recalculatePredictionOnUpdate = onValueWritten(
+  'predictions/{userId}/{matchId}',
+  async (event) => {
+    const { userId, matchId } = event.params;
+    const before = event.data.before.val() as Prediction | null;
+    const after = event.data.after.val() as Prediction | null;
+
+    // If prediction was deleted or no data, exit
+    if (!after) {
+      return;
+    }
+
+    // If only the points changed (not the prediction values), exit to avoid loops
+    if (
+      before &&
+      before.homePrediction === after.homePrediction &&
+      before.awayPrediction === after.awayPrediction
+    ) {
+      return;
+    }
+
+    // Get the match to check if it has scores
+    try {
+      const matchSnapshot = await db.ref(`matches/${matchId}`).get();
+      if (!matchSnapshot.exists()) {
+        return;
+      }
+
+      const match = matchSnapshot.val() as Match;
+
+      // Only recalculate if match has scores
+      if (match.homeScore < 0 || match.awayScore < 0) {
+        return;
+      }
+
+      // Calculate points
+      const points = calculatePoints(
+        match.homeScore,
+        match.awayScore,
+        after.homePrediction,
+        after.awayPrediction
+      );
+
+      // Update points if they changed
+      if (after.points !== points) {
+        await db.ref(`predictions/${userId}/${matchId}/points`).set(points);
+        logger.info(
+          `Recalculated points for user ${userId}, game ${matchId}: ${points}`
+        );
+      }
+    } catch (error) {
+      logger.error('Error recalculating prediction points:', error);
+    }
+  }
+);
+
+/**
  * Triggered when prediction points change
  * Updates the user's total score
  */
