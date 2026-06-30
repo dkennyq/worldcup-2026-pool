@@ -32,25 +32,38 @@ const getWinner = (home: number, away: number): Winner => {
 };
 
 /**
+ * Determine if a match is a knockout round (elimination stage)
+ * Knockout rounds have no group assigned.
+ * group can be null, undefined, or '' when missing from the database/API.
+ */
+export const isKnockoutRound = (round: string | undefined | null, group: string | null | undefined): boolean =>
+  (group === null || group === undefined) && !!round;
+
+/**
  * Calculate points for a prediction based on match scores
- * New system:
+ * Group stage:
  * - 3k (3000): Exact score
  * - 2k (2000): Correct winner (not exact)
  * - 1k (1000): Correct draw (not exact)
+ * - 0: Wrong result
+ * Knockout stage:
+ * - 3k (3000): Exact score
+ * - 1k (1000): Correct winner (not exact) - no draws in knockout
  * - 0: Wrong result
  */
 export function calculatePoints(
   homeScore: number,
   awayScore: number,
   homePrediction: number | null,
-  awayPrediction: number | null
+  awayPrediction: number | null,
+  isKnockout: boolean = false
 ): number {
   // No prediction or match not played yet
   if (homeScore < 0 || homePrediction === null || awayPrediction === null) {
     return 0;
   }
 
-  // Exact score: 3k
+  // Exact score: always 3k
   if (homeScore === homePrediction && awayScore === awayPrediction) {
     return 3000;
   }
@@ -59,11 +72,15 @@ export function calculatePoints(
   const predictedWinner = getWinner(homePrediction, awayPrediction);
 
   if (actualWinner === predictedWinner) {
-    // Correct draw (not exact): 1k
+    // In knockout rounds, there are no draws - correct winner gets 1k
+    if (isKnockout) {
+      return 1000;
+    }
+    // Group stage: correct draw (not exact): 1k
     if (actualWinner === 'tied') {
       return 1000;
     }
-    // Correct winner (not exact): 2k
+    // Group stage: correct winner (not exact): 2k
     return 2000;
   }
 
