@@ -45,12 +45,16 @@ function getWinner(home, away) {
   return 'tied';
 }
 
-function calculateNewPoints(homeScore, awayScore, homePrediction, awayPrediction) {
+function isKnockoutRound(round, group) {
+  return (group === null || group === undefined) && !!round;
+}
+
+function calculateNewPoints(homeScore, awayScore, homePrediction, awayPrediction, isKnockout) {
   if (homeScore < 0 || homePrediction === null || awayPrediction === null) {
     return 0;
   }
 
-  // Exact score: 3k
+  // Exact score: always 3k
   if (homeScore === homePrediction && awayScore === awayPrediction) {
     return 3000;
   }
@@ -59,11 +63,15 @@ function calculateNewPoints(homeScore, awayScore, homePrediction, awayPrediction
   const predictedWinner = getWinner(homePrediction, awayPrediction);
 
   if (actualWinner === predictedWinner) {
-    // Correct draw (not exact): 1k
+    // In knockout rounds, there are no draws - correct winner gets 1k
+    if (isKnockout) {
+      return 1000;
+    }
+    // Group stage: correct draw (not exact): 1k
     if (actualWinner === 'tied') {
       return 1000;
     }
-    // Correct winner (not exact): 2k
+    // Group stage: correct winner (not exact): 2k
     return 2000;
   }
 
@@ -104,11 +112,13 @@ async function updatePoints(db) {
 
       totalCount++;
 
+      const isKnockout = isKnockoutRound(match.round, match.group);
       const newPoints = calculateNewPoints(
         match.homeScore,
         match.awayScore,
         prediction.homePrediction,
-        prediction.awayPrediction
+        prediction.awayPrediction,
+        isKnockout
       );
 
       if (prediction.points !== newPoints) {

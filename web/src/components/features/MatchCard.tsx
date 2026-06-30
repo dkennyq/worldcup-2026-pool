@@ -1,6 +1,6 @@
 import React from 'react';
 import { type Match, type Prediction, savePrediction } from '../../services';
-import { formatPoints, calculatePoints } from '../../utils/format';
+import { formatPoints, calculatePoints, isKnockoutRound } from '../../utils/format';
 import { Card } from '../ui/Card';
 
 // Import all flags dynamically
@@ -115,13 +115,15 @@ export const MatchCard = ({
 
   // Calculate points locally when match has scores
   // This ensures correct display even if prediction was edited after match started
+  const isKnockout = isKnockoutRound(match.round, match.group);
   const displayPoints =
     isPlayed && prediction
       ? calculatePoints(
           match.homeScore,
           match.awayScore,
           prediction.homePrediction,
-          prediction.awayPrediction
+          prediction.awayPrediction,
+          isKnockout
         )
       : prediction?.points ?? 0;
 

@@ -13,6 +13,8 @@ const FIFA_SEASON_ID = '285023'; // 2026
 interface Match {
   game: number;
   fifaId: string;
+  round: string;
+  group: string | null;
   homeScore: number;
   awayScore: number;
   matchTime: string | null;
@@ -47,25 +49,38 @@ const getWinner = (home: number, away: number): 'home' | 'away' | 'tied' => {
 };
 
 /**
+ * Determine if a match is a knockout round (elimination stage)
+ * Knockout rounds have no group assigned.
+ * group can be null, undefined, or '' when missing from the database/API.
+ */
+const isKnockoutRound = (round: string | undefined | null, group: string | null | undefined): boolean =>
+  (group === null || group === undefined) && !!round;
+
+/**
  * Calculate points for a prediction
- * New system:
+ * Group stage:
  * - 3k (3000): Exact score
  * - 2k (2000): Correct winner (not exact)
  * - 1k (1000): Correct draw (not exact)
+ * - 0: Wrong result
+ * Knockout stage:
+ * - 3k (3000): Exact score
+ * - 1k (1000): Correct winner (not exact) - no draws in knockout
  * - 0: Wrong result
  */
 const calculatePoints = (
   homeScore: number,
   awayScore: number,
   homePrediction: number | null,
-  awayPrediction: number | null
+  awayPrediction: number | null,
+  isKnockout: boolean
 ): number => {
   // No prediction or match not played yet
   if (homeScore < 0 || homePrediction === null || awayPrediction === null) {
     return 0;
   }
 
-  // Exact score: 3k
+  // Exact score: always 3k
   if (homeScore === homePrediction && awayScore === awayPrediction) {
     return 3000;
   }
@@ -74,11 +89,15 @@ const calculatePoints = (
   const predictedWinner = getWinner(homePrediction, awayPrediction);
 
   if (actualWinner === predictedWinner) {
-    // Correct draw (not exact): 1k
+    // In knockout rounds, there are no draws - correct winner gets 1k
+    if (isKnockout) {
+      return 1000;
+    }
+    // Group stage: correct draw (not exact): 1k
     if (actualWinner === 'tied') {
       return 1000;
     }
-    // Correct winner (not exact): 2k
+    // Group stage: correct winner (not exact): 2k
     return 2000;
   }
 
@@ -195,11 +214,13 @@ export const updatePredictionPoints = onValueWritten(
         const prediction = predictionSnapshot.val() as Prediction | null;
 
         if (prediction) {
+          const isKnockout = isKnockoutRound(match.round, match.group);
           const points = calculatePoints(
             match.homeScore,
             match.awayScore,
             prediction.homePrediction,
-            prediction.awayPrediction
+            prediction.awayPrediction,
+            isKnockout
           );
 
           if (prediction.points !== points) {
@@ -261,11 +282,13 @@ export const recalculatePredictionOnUpdate = onValueWritten(
       }
 
       // Calculate points
+      const isKnockout = isKnockoutRound(match.round, match.group);
       const points = calculatePoints(
         match.homeScore,
         match.awayScore,
         after.homePrediction,
-        after.awayPrediction
+        after.awayPrediction,
+        isKnockout
       );
 
       // Update points if they changed

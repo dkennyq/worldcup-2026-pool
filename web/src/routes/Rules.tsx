@@ -27,7 +27,8 @@ export const Rules = () => {
             How Points Are Calculated
           </h2>
 
-          <div className="space-y-4 text-white/80">
+          <h3 className="text-lg font-semibold text-white mb-2">Group Stage</h3>
+          <div className="space-y-4 text-white/80 mb-6">
             <div className="flex items-start gap-3">
               <span className="text-2xl">🥳</span>
               <div>
@@ -72,6 +73,45 @@ export const Rules = () => {
                 </h3>
                 <p className="text-sm">
                   Predict the wrong winner or miss a draw.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <h3 className="text-lg font-semibold text-white mb-2">Knockout Stage</h3>
+          <div className="space-y-4 text-white/80">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">🥳</span>
+              <div>
+                <h3 className="font-semibold text-white">
+                  Exact Score — 3k
+                </h3>
+                <p className="text-sm">
+                  Predict the exact final score of both teams. Earns 3k (3000).
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">😄</span>
+              <div>
+                <h3 className="font-semibold text-white">
+                  Correct Winner — 1k
+                </h3>
+                <p className="text-sm">
+                  Predict the correct team advancing, but not the exact score. Earns 1k (1000). No draws in knockout rounds.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">😔</span>
+              <div>
+                <h3 className="font-semibold text-white">
+                  Wrong Result — 0
+                </h3>
+                <p className="text-sm">
+                  Predict the wrong team advancing.
                 </p>
               </div>
             </div>
